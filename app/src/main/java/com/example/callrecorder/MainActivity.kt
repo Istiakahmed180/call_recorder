@@ -226,7 +226,9 @@ class MainActivity : AppCompatActivity() {
         }
         adapter.updateData(filtered)
 
+        val noMatch = filtered.isEmpty() && !noneAtAll
         binding.textEmpty.visibility = if (noneAtAll) View.VISIBLE else View.GONE
+        binding.textNoResults.visibility = if (noMatch) View.VISIBLE else View.GONE
         binding.recyclerView.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
         binding.textRecordCount.text = if (noneAtAll) "" else filtered.size.toString()
     }
