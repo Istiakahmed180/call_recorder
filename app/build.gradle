@@ -24,12 +24,12 @@ def hasSigning = ksStoreFile && ksStorePassword && ksKeyAlias && ksKeyPassword
 
 android {
     namespace 'com.example.callrecorder'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.example.callrecorder"
         minSdk 26
-        targetSdk 33
+        targetSdk 35
         versionCode 3
         versionName "1.2"
     }

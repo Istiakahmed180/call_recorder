@@ -19,6 +19,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.callrecorder.databinding.ActivityMainBinding
@@ -59,6 +62,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Edge-to-edge (targetSdk 35): pad the header below the status bar and
+        // the list above the navigation bar.
+        val headerTop = binding.headerBar.paddingTop
+        val listBottom = binding.recyclerView.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            binding.headerBar.updatePadding(top = headerTop + bars.top)
+            binding.recyclerView.updatePadding(bottom = listBottom + bars.bottom)
+            insets
+        }
 
         adapter = RecordingsAdapter(
             mutableListOf(),

@@ -3,6 +3,9 @@ package com.example.callrecorder
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.example.callrecorder.databinding.ActivitySettingsBinding
 
 class SettingsActivity : AppCompatActivity() {
@@ -15,6 +18,14 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val headerTop = binding.headerBar.paddingTop
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            binding.headerBar.updatePadding(top = headerTop + bars.top)
+            v.updatePadding(bottom = bars.bottom)
+            insets
+        }
 
         binding.btnBack.setOnClickListener { finish() }
 
