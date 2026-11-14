@@ -1,5 +1,8 @@
 package com.example.callrecorder
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +16,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
 
     private val autoDeleteDays = intArrayOf(0, 7, 30, 90)
+    private val releasesUrl = "https://github.com/Istiakahmed180/call_recorder/releases/latest"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +45,24 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.rowAutoDelete.setOnClickListener { showAutoDeleteDialog() }
         updateAutoDeleteLabel()
+
+        binding.textVersion.text = appVersion()
+        binding.rowLatest.setOnClickListener {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(releasesUrl)))
+            } catch (_: Exception) { }
+        }
+    }
+
+    private fun appVersion(): String {
+        return try {
+            val p = packageManager.getPackageInfo(packageName, 0)
+            val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+                p.longVersionCode else @Suppress("DEPRECATION") p.versionCode.toLong()
+            "${p.versionName} ($code)"
+        } catch (_: Exception) {
+            ""
+        }
     }
 
     private fun showAutoDeleteDialog() {

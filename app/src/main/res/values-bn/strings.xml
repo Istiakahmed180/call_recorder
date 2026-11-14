@@ -38,6 +38,11 @@
     <string name="auto_delete_never">কখনও না</string>
     <string name="auto_delete_days">%d দিন পর</string>
 
+    <string name="about_header">অ্যাপ সম্পর্কে</string>
+    <string name="about_version">সংস্করণ</string>
+    <string name="about_latest_title">সর্বশেষ সংস্করণ নিন</string>
+    <string name="about_latest_summary">ডাউনলোড পেজ খুলুন</string>
+
     <string name="play">চালান</string>
     <string name="stop">থামান</string>
     <string name="share_recording">রেকর্ডিং শেয়ার করুন</string>

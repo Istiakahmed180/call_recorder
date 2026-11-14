@@ -37,6 +37,11 @@
     <string name="pref_auto_delete_title">Auto-delete old recordings</string>
     <string name="auto_delete_never">Never</string>
     <string name="auto_delete_days">After %d days</string>
+
+    <string name="about_header">ABOUT</string>
+    <string name="about_version">Version</string>
+    <string name="about_latest_title">Get the latest version</string>
+    <string name="about_latest_summary">Open the download page</string>
     <string name="play">Play</string>
     <string name="stop">Stop</string>
     <string name="share_recording">Share recording</string>
