@@ -17,6 +17,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.callrecorder.databinding.ActivityMainBinding
 import java.io.File
@@ -27,6 +28,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: RecordingsAdapter
     private var player: MediaPlayer? = null
     private var playingFile: File? = null
+    private var allRecordings: List<Recording> = emptyList()
+    private var searchQuery: String = ""
 
     private val requiredPermissions = buildList {
         add(android.Manifest.permission.RECORD_AUDIO)
@@ -62,6 +65,11 @@ class MainActivity : AppCompatActivity() {
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
+
+        binding.searchInput.doAfterTextChanged {
+            searchQuery = it?.toString()?.trim().orEmpty()
+            applyFilter()
+        }
 
         binding.btnGrantPermissions.setOnClickListener {
             permissionLauncher.launch(requiredPermissions.toTypedArray())
@@ -169,11 +177,25 @@ class MainActivity : AppCompatActivity() {
                 durationMs = readDuration(it)
             )
         }
-        adapter.updateData(recordings)
-        val empty = recordings.isEmpty()
-        binding.textEmpty.visibility = if (empty) View.VISIBLE else View.GONE
-        binding.recyclerView.visibility = if (empty) View.GONE else View.VISIBLE
-        binding.textRecordCount.text = if (empty) "" else recordings.size.toString()
+        allRecordings = recordings
+        applyFilter()
+    }
+
+    private fun applyFilter() {
+        val noneAtAll = allRecordings.isEmpty()
+        // Search box only makes sense once there are recordings.
+        binding.searchInput.visibility = if (noneAtAll) View.GONE else View.VISIBLE
+
+        val filtered = if (searchQuery.isBlank()) {
+            allRecordings
+        } else {
+            allRecordings.filter { it.displayName.contains(searchQuery, ignoreCase = true) }
+        }
+        adapter.updateData(filtered)
+
+        binding.textEmpty.visibility = if (noneAtAll) View.VISIBLE else View.GONE
+        binding.recyclerView.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+        binding.textRecordCount.text = if (noneAtAll) "" else filtered.size.toString()
     }
 
     /** Turns a recording file name into a friendly list title. */
