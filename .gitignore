@@ -16,6 +16,8 @@ local.properties
 .DS_Store
 captures/
 
-# Keystores (never commit signing keys)
+# Keystores and signing secrets (NEVER commit these)
 *.jks
 *.keystore
+keystore/
+keystore.properties

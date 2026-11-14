@@ -3,6 +3,25 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// Read signing config: from environment variables (CI), else from
+// keystore.properties (local). If neither is present, release stays unsigned.
+def ksStoreFile = System.getenv("RELEASE_STORE_FILE")
+def ksStorePassword = System.getenv("RELEASE_STORE_PASSWORD")
+def ksKeyAlias = System.getenv("RELEASE_KEY_ALIAS")
+def ksKeyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+
+def keystorePropsFile = rootProject.file("keystore.properties")
+if (keystorePropsFile.exists()) {
+    def props = new Properties()
+    keystorePropsFile.withInputStream { props.load(it) }
+    ksStoreFile = ksStoreFile ?: props.getProperty("storeFile")
+    ksStorePassword = ksStorePassword ?: props.getProperty("storePassword")
+    ksKeyAlias = ksKeyAlias ?: props.getProperty("keyAlias")
+    ksKeyPassword = ksKeyPassword ?: props.getProperty("keyPassword")
+}
+
+def hasSigning = ksStoreFile && ksStorePassword && ksKeyAlias && ksKeyPassword
+
 android {
     namespace 'com.example.callrecorder'
     compileSdk 34
@@ -15,9 +34,23 @@ android {
         versionName "1.0"
     }
 
+    signingConfigs {
+        if (hasSigning) {
+            release {
+                storeFile rootProject.file(ksStoreFile)
+                storePassword ksStorePassword
+                keyAlias ksKeyAlias
+                keyPassword ksKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            if (hasSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 

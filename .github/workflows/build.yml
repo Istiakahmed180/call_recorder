@@ -1,10 +1,17 @@
-name: Build APK on version update
+name: Build Release APK on version update
 
-# Builds ONLY when the app version changes.
+# Builds a SIGNED release APK ONLY when the app version changes.
 # Edit versionName (and versionCode) in app/build.gradle and push to main.
 # A normal push that does not touch app/build.gradle does nothing.
 # If app/build.gradle changes but the versionName is one that was already
-# built before (a release tag v<versionName> exists), the build is skipped.
+# released (a tag v<versionName> exists), the build is skipped.
+#
+# Requires these repository secrets (Settings -> Secrets and variables ->
+# Actions -> New repository secret):
+#   RELEASE_KEYSTORE_BASE64  - base64 of keystore/release.jks
+#   RELEASE_STORE_PASSWORD   - keystore password
+#   RELEASE_KEY_ALIAS        - key alias
+#   RELEASE_KEY_PASSWORD     - key password
 
 on:
   push:
@@ -60,15 +67,26 @@ jobs:
         if: steps.check.outputs.build == 'true'
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK
+      - name: Decode keystore
         if: steps.check.outputs.build == 'true'
-        run: ./gradlew assembleDebug
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > keystore_release.jks
+          echo "Keystore decoded ($(wc -c < keystore_release.jks) bytes)"
+
+      - name: Build signed release APK
+        if: steps.check.outputs.build == 'true'
+        env:
+          RELEASE_STORE_FILE: keystore_release.jks
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
 
       - name: Rename APK with version
         if: steps.check.outputs.build == 'true'
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk \
+          cp app/build/outputs/apk/release/app-release.apk \
              "dist/CallRecorder-${{ steps.ver.outputs.version }}.apk"
 
       - name: Upload APK as workflow artifact
@@ -86,3 +104,7 @@ jobs:
           name: Call Recorder v${{ steps.ver.outputs.version }}
           files: dist/CallRecorder-${{ steps.ver.outputs.version }}.apk
           generate_release_notes: true
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f keystore_release.jks
