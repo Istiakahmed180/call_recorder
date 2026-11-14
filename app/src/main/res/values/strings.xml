@@ -1,11 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Call Recorder</string>
+    <string name="app_tagline">Automatic call recorder</string>
+
+    <string name="setup_header">SETUP</string>
+    <string name="setup_permissions_title">Recording permissions</string>
+    <string name="setup_accessibility_title">WhatsApp / IMO detection</string>
+    <string name="setup_battery_title">Battery optimization</string>
+    <string name="setup_tap_to_set_up">Tap to set up</string>
+    <string name="setup_granted">Granted</string>
+    <string name="setup_enabled">Enabled</string>
+    <string name="setup_disabled_ok">Disabled (recommended)</string>
+    <string name="setup_not_granted">Not granted — tap to allow</string>
+    <string name="setup_not_enabled">Off — tap to enable</string>
+    <string name="setup_battery_on">On — tap to disable</string>
+
+    <string name="status_checking">Checking setup…</string>
+    <string name="status_active">Active — listening for calls</string>
+    <string name="status_needs_setup">Grant permissions to start recording</string>
+
     <string name="btn_grant_permissions">Grant recording permissions</string>
     <string name="btn_enable_accessibility">Enable WhatsApp/IMO detection (Accessibility)</string>
     <string name="btn_ignore_battery">Disable battery optimization for this app</string>
-    <string name="recordings_header">Recordings</string>
+    <string name="recordings_header">RECORDINGS</string>
     <string name="no_recordings">No recordings yet</string>
+    <string name="no_recordings_hint">Recordings will appear here after a call</string>
     <string name="play">Play</string>
     <string name="share_recording">Share recording</string>
     <string name="delete">Delete</string>

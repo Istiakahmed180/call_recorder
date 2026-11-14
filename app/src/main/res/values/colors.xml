@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="brand">#1565C0</color>
+    <color name="brand_dark">#0D47A1</color>
+    <color name="brand_light">#1E88E5</color>
+    <color name="accent">#00ACC1</color>
+
+    <color name="ok_green">#2E7D32</color>
+    <color name="ok_green_bg">#E6F4EA</color>
+    <color name="pending_amber">#B26A00</color>
+    <color name="pending_amber_bg">#FFF4E0</color>
+    <color name="danger">#D32F2F</color>
+
     <color name="purple_500">#6200EE</color>
     <color name="purple_700">#3700B3</color>
     <color name="teal_200">#03DAC5</color>

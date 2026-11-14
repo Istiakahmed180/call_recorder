@@ -1,10 +1,16 @@
 package com.example.callrecorder
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
+import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -36,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
         refreshList()
+        updateSetupStatus()
         maybeStartListening()
     }
 
@@ -72,7 +79,58 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshList()
+        updateSetupStatus()
         maybeStartListening()
+    }
+
+    private fun hasPermission(p: String) =
+        ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
+
+    private fun isAccessibilityEnabled(): Boolean {
+        val expected = "$packageName/${MessengerAccessibilityService::class.java.name}"
+        val enabled = Settings.Secure.getString(
+            contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabled.split(':').any { it.equals(expected, ignoreCase = true) }
+    }
+
+    private fun isIgnoringBattery(): Boolean {
+        val pm = getSystemService(PowerManager::class.java) ?: return false
+        return pm.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    private fun setRowStatus(
+        status: TextView, check: ImageView, chevron: ImageView,
+        ok: Boolean, okText: String, notText: String
+    ) {
+        status.text = if (ok) okText else notText
+        check.visibility = if (ok) View.VISIBLE else View.GONE
+        chevron.visibility = if (ok) View.GONE else View.VISIBLE
+    }
+
+    private fun updateSetupStatus() {
+        val permOk = hasPermission(android.Manifest.permission.RECORD_AUDIO) &&
+            hasPermission(android.Manifest.permission.READ_PHONE_STATE)
+        setRowStatus(
+            binding.textPermStatus, binding.iconPermCheck, binding.iconPermChevron, permOk,
+            getString(R.string.setup_granted), getString(R.string.setup_not_granted)
+        )
+        setRowStatus(
+            binding.textAccStatus, binding.iconAccCheck, binding.iconAccChevron,
+            isAccessibilityEnabled(),
+            getString(R.string.setup_enabled), getString(R.string.setup_not_enabled)
+        )
+        setRowStatus(
+            binding.textBatStatus, binding.iconBatCheck, binding.iconBatChevron,
+            isIgnoringBattery(),
+            getString(R.string.setup_disabled_ok), getString(R.string.setup_battery_on)
+        )
+
+        val dotColor = if (permOk) R.color.ok_green else R.color.pending_amber
+        binding.statusDot.background?.mutate()?.setTint(ContextCompat.getColor(this, dotColor))
+        binding.statusText.text = getString(
+            if (permOk) R.string.status_active else R.string.status_needs_setup
+        )
     }
 
     /**
@@ -108,7 +166,10 @@ class MainActivity : AppCompatActivity() {
             )
         }
         adapter.updateData(recordings)
-        binding.textEmpty.visibility = if (recordings.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+        val empty = recordings.isEmpty()
+        binding.textEmpty.visibility = if (empty) View.VISIBLE else View.GONE
+        binding.recyclerView.visibility = if (empty) View.GONE else View.VISIBLE
+        binding.textRecordCount.text = if (empty) "" else recordings.size.toString()
     }
 
     private fun playRecording(rec: Recording) {
