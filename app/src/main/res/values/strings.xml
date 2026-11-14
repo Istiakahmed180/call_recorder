@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Call Recorder</string>
+    <string name="btn_grant_permissions">Grant recording permissions</string>
+    <string name="btn_enable_accessibility">Enable WhatsApp/IMO detection (Accessibility)</string>
+    <string name="btn_ignore_battery">Disable battery optimization for this app</string>
+    <string name="recordings_header">Recordings</string>
+    <string name="no_recordings">No recordings yet</string>
+    <string name="play">Play</string>
+    <string name="share_recording">Share recording</string>
+    <string name="delete">Delete</string>
+    <string name="notification_channel_name">Call Recording</string>
+    <string name="notification_recording_title">Recording call</string>
+    <string name="notification_recording_text">This call is being recorded.</string>
+    <string name="accessibility_service_description">Used only to detect when a WhatsApp or IMO call screen is on screen, so recording can start automatically. Does not read messages or any other content.</string>
+</resources>
