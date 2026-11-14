@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.callrecorder.databinding.ActivityMainBinding
@@ -33,7 +34,10 @@ class MainActivity : AppCompatActivity() {
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { refreshList() }
+    ) {
+        refreshList()
+        maybeStartListening()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +72,28 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshList()
+        maybeStartListening()
+    }
+
+    /**
+     * Start (or ensure running) the persistent recording service so it can
+     * listen for calls itself. Starting from the foreground Activity is allowed
+     * on Android 12+, unlike starting from a background broadcast receiver.
+     */
+    private fun maybeStartListening() {
+        val micOk = ContextCompat.checkSelfPermission(
+            this, android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val phoneOk = ContextCompat.checkSelfPermission(
+            this, android.Manifest.permission.READ_PHONE_STATE
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!micOk || !phoneOk) return
+        val intent = Intent(this, CallRecorderService::class.java).apply {
+            action = CallRecorderService.ACTION_START_LISTENING
+        }
+        try {
+            ContextCompat.startForegroundService(this, intent)
+        } catch (_: Exception) { }
     }
 
     private fun refreshList() {

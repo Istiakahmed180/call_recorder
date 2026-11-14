@@ -5,41 +5,38 @@ import android.content.Context
 import android.content.Intent
 import android.telephony.TelephonyManager
 
+/**
+ * Backup phone-state receiver.
+ *
+ * The real work is done by [CallRecorderService], which listens for call
+ * state itself while it runs in the foreground. This receiver only forwards
+ * the state to that already-running service — it deliberately does NOT try to
+ * start a foreground service from the background, because Android 12+ forbids
+ * that (it throws ForegroundServiceStartNotAllowedException and crashes).
+ * Everything here is wrapped in try/catch so a failed forward is a no-op.
+ */
 class CallReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != "android.intent.action.PHONE_STATE") return
-
         val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
+
+        val svc = Intent(context, CallRecorderService::class.java)
         when (state) {
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {
-                // Call connected (either answered incoming, or outgoing call
-                // that is now active) -> start recording.
-                val svc = Intent(context, CallRecorderService::class.java).apply {
-                    action = CallRecorderService.ACTION_START
-                    putExtra(CallRecorderService.EXTRA_SOURCE, "Call")
-                }
-                startServiceCompat(context, svc)
+                svc.action = CallRecorderService.ACTION_START
+                svc.putExtra(CallRecorderService.EXTRA_SOURCE, "Call")
             }
             TelephonyManager.EXTRA_STATE_IDLE -> {
-                // Call ended -> stop recording.
-                val svc = Intent(context, CallRecorderService::class.java).apply {
-                    action = CallRecorderService.ACTION_STOP
-                }
-                startServiceCompat(context, svc)
+                svc.action = CallRecorderService.ACTION_STOP
             }
-            TelephonyManager.EXTRA_STATE_RINGING -> {
-                // Incoming call ringing - do nothing yet, wait for OFFHOOK
-                // (i.e. the call actually being answered) before recording.
-            }
+            else -> return // RINGING: wait for OFFHOOK
         }
-    }
 
-    private fun startServiceCompat(context: Context, intent: Intent) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
+        // Only reaches the service if it is already running; never starts a new
+        // foreground service from the background.
+        try {
+            context.startService(svc)
+        } catch (_: Exception) { }
     }
 }

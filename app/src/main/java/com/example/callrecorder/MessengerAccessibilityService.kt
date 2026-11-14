@@ -82,11 +82,11 @@ class MessengerAccessibilityService : AccessibilityService() {
             action = CallRecorderService.ACTION_START
             putExtra(CallRecorderService.EXTRA_SOURCE, appName)
         }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
+        // An accessibility service is allowed to start a foreground service;
+        // wrapped in try/catch so a rare rejection never crashes detection.
+        try {
+            androidx.core.content.ContextCompat.startForegroundService(this, intent)
+        } catch (_: Exception) { }
     }
 
     private fun stopRecording() {
@@ -95,7 +95,9 @@ class MessengerAccessibilityService : AccessibilityService() {
         val intent = Intent(this, CallRecorderService::class.java).apply {
             action = CallRecorderService.ACTION_STOP
         }
-        startService(intent)
+        try {
+            startService(intent)
+        } catch (_: Exception) { }
     }
 
     private fun enableSpeakerphone(on: Boolean) {
