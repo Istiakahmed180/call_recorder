@@ -1,0 +1,21 @@
+# Built output
+build/
+app/build/
+dist/
+*.apk
+
+# Local config (machine-specific, must NOT be committed)
+local.properties
+
+# Gradle caches
+.gradle/
+
+# Android Studio / IDE
+.idea/
+*.iml
+.DS_Store
+captures/
+
+# Keystores (never commit signing keys)
+*.jks
+*.keystore

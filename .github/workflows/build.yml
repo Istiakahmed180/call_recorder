@@ -1,9 +1,20 @@
-name: Build Debug APK
+name: Build APK on version update
+
+# Builds ONLY when the app version changes.
+# Edit versionName (and versionCode) in app/build.gradle and push to main.
+# A normal push that does not touch app/build.gradle does nothing.
+# If app/build.gradle changes but the versionName is one that was already
+# built before (a release tag v<versionName> exists), the build is skipped.
 
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:
+    paths:
+      - "app/build.gradle"
+  workflow_dispatch: {}   # lets you also trigger a build manually
+
+permissions:
+  contents: write          # needed to create the GitHub Release
 
 jobs:
   build:
@@ -11,21 +22,67 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # fetch all tags so we can detect existing versions
+
+      - name: Read versionName from app/build.gradle
+        id: ver
+        run: |
+          VERSION=$(grep -E 'versionName\s+"' app/build.gradle | head -1 \
+            | sed -E 's/.*versionName[[:space:]]+"([^"]+)".*/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "Could not read versionName from app/build.gradle" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected versionName: $VERSION"
+
+      - name: Skip if this version was already released
+        id: check
+        run: |
+          TAG="v${{ steps.ver.outputs.version }}"
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists -> version not changed, skipping build."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New version $TAG -> building."
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up JDK 17
+        if: steps.check.outputs.build == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        if: steps.check.outputs.build == 'true'
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Build debug APK
-        run: gradle assembleDebug
+        if: steps.check.outputs.build == 'true'
+        run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Rename APK with version
+        if: steps.check.outputs.build == 'true'
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             "dist/CallRecorder-${{ steps.ver.outputs.version }}.apk"
+
+      - name: Upload APK as workflow artifact
+        if: steps.check.outputs.build == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: CallRecorder-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: CallRecorder-${{ steps.ver.outputs.version }}
+          path: dist/CallRecorder-${{ steps.ver.outputs.version }}.apk
+
+      - name: Create GitHub Release with the APK
+        if: steps.check.outputs.build == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: Call Recorder v${{ steps.ver.outputs.version }}
+          files: dist/CallRecorder-${{ steps.ver.outputs.version }}.apk
+          generate_release_notes: true
