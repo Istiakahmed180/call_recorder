@@ -192,7 +192,8 @@ class MainActivity : AppCompatActivity() {
                 displayName = prettyName(it.name),
                 dateMillis = it.lastModified(),
                 sizeBytes = it.length(),
-                durationMs = readDuration(it)
+                durationMs = readDuration(it),
+                kind = kindOf(it.name)
             )
         }
         allRecordings = recordings
@@ -214,6 +215,18 @@ class MainActivity : AppCompatActivity() {
         binding.textEmpty.visibility = if (noneAtAll) View.VISIBLE else View.GONE
         binding.recyclerView.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
         binding.textRecordCount.text = if (noneAtAll) "" else filtered.size.toString()
+    }
+
+    private fun kindOf(fileName: String): String {
+        return when (fileName.substringBefore('_')) {
+            "Incoming" -> Recording.KIND_INCOMING
+            "Outgoing" -> Recording.KIND_OUTGOING
+            "Missed" -> Recording.KIND_MISSED
+            "WhatsApp" -> Recording.KIND_WHATSAPP
+            "IMO" -> Recording.KIND_IMO
+            "Call" -> Recording.KIND_CALL
+            else -> Recording.KIND_OTHER
+        }
     }
 
     /** Turns a recording file name into a friendly list title. */

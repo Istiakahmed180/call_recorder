@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.io.File
@@ -23,6 +24,7 @@ class RecordingsAdapter(
     private var playingFile: File? = null
 
     inner class VH(view: View) : RecyclerView.ViewHolder(view) {
+        val icon: ImageView = view.findViewById(R.id.iconKind)
         val title: TextView = view.findViewById(R.id.textTitle)
         val subtitle: TextView = view.findViewById(R.id.textSubtitle)
         val btnPlay: ImageButton = view.findViewById(R.id.btnPlay)
@@ -38,6 +40,17 @@ class RecordingsAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val rec = items[position]
         holder.title.text = rec.displayName
+
+        val (iconRes, colorRes) = when (rec.kind) {
+            Recording.KIND_INCOMING -> R.drawable.ic_call_received to R.color.ok_green
+            Recording.KIND_OUTGOING -> R.drawable.ic_call_made to R.color.brand
+            Recording.KIND_MISSED -> R.drawable.ic_call_missed to R.color.danger
+            else -> R.drawable.ic_mic to R.color.brand
+        }
+        holder.icon.setImageResource(iconRes)
+        holder.icon.setColorFilter(
+            androidx.core.content.ContextCompat.getColor(holder.itemView.context, colorRes)
+        )
 
         val sizeMb = rec.sizeBytes / (1024.0 * 1024.0)
         val meta = buildString {
