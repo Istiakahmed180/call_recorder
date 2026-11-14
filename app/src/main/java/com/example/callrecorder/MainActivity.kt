@@ -163,7 +163,7 @@ class MainActivity : AppCompatActivity() {
         val recordings = files.map {
             Recording(
                 file = it,
-                displayName = it.name,
+                displayName = prettyName(it.name),
                 dateMillis = it.lastModified(),
                 sizeBytes = it.length(),
                 durationMs = readDuration(it)
@@ -174,6 +174,22 @@ class MainActivity : AppCompatActivity() {
         binding.textEmpty.visibility = if (empty) View.VISIBLE else View.GONE
         binding.recyclerView.visibility = if (empty) View.GONE else View.VISIBLE
         binding.textRecordCount.text = if (empty) "" else recordings.size.toString()
+    }
+
+    /** Turns a recording file name into a friendly list title. */
+    private fun prettyName(fileName: String): String {
+        val base = fileName.substringBeforeLast('.')
+        val parts = base.split('_')
+        return when (parts.firstOrNull()) {
+            "Incoming", "Outgoing", "Missed" -> {
+                val num = parts.getOrNull(1)?.takeIf { it.isNotBlank() && it != "Unknown" }
+                if (num != null) "${parts[0]} · $num" else "${parts[0]} call"
+            }
+            "WhatsApp" -> "WhatsApp call"
+            "IMO" -> "IMO call"
+            "Call" -> "Phone call"
+            else -> base
+        }
     }
 
     private fun readDuration(f: File): Long {

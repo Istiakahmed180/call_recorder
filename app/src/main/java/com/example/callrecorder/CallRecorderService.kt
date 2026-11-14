@@ -5,10 +5,12 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.IBinder
+import android.provider.CallLog
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
@@ -144,8 +146,14 @@ class CallRecorderService : Service() {
                 // Only stop if THIS recording belongs to a cellular call, so a
                 // WhatsApp/IMO recording is not cut off by an unrelated idle.
                 if (recordingSource == SOURCE_CALL) {
+                    val saved = outputFile
                     stopRecording()
                     updateNotification(recording = false)
+                    // The call-log entry may be written a moment after IDLE;
+                    // wait briefly, then tag the file with number + direction.
+                    android.os.Handler(mainLooper).postDelayed({
+                        finalizeCallRecording(saved)
+                    }, 1500)
                 }
             }
             // CALL_STATE_RINGING: wait for OFFHOOK before recording.
@@ -268,6 +276,54 @@ class CallRecorderService : Service() {
         recorder = null
         isRecording = false
         recordingSource = null
+    }
+
+    /**
+     * Renames a finished cellular-call recording to include the direction and
+     * the other party's number, looked up from the call log (which keeps the
+     * number even on Android 12+, unlike the live telephony callback).
+     * If the call log can't be read, the original "Call_<stamp>.m4a" name is
+     * kept.
+     */
+    private fun finalizeCallRecording(file: File?) {
+        if (file == null || !file.exists()) return
+        val info = lookupLastCall() ?: return
+        val (number, type) = info
+
+        val dirLabel = when (type) {
+            CallLog.Calls.INCOMING_TYPE -> "Incoming"
+            CallLog.Calls.OUTGOING_TYPE -> "Outgoing"
+            CallLog.Calls.MISSED_TYPE -> "Missed"
+            else -> "Call"
+        }
+        val num = number.replace(Regex("[^0-9+]"), "").ifBlank { "Unknown" }
+        val stampPart = file.nameWithoutExtension.removePrefix("${SOURCE_CALL}_")
+        val newFile = File(file.parentFile, "${dirLabel}_${num}_${stampPart}.m4a")
+        try {
+            if (newFile != file) file.renameTo(newFile)
+        } catch (_: Exception) { }
+    }
+
+    private fun lookupLastCall(): Pair<String, Int>? {
+        if (checkSelfPermission(android.Manifest.permission.READ_CALL_LOG)
+            != PackageManager.PERMISSION_GRANTED
+        ) return null
+        return try {
+            contentResolver.query(
+                CallLog.Calls.CONTENT_URI,
+                arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.TYPE),
+                null, null,
+                "${CallLog.Calls.DATE} DESC"
+            )?.use { c ->
+                if (c.moveToFirst()) {
+                    val number = c.getString(0) ?: ""
+                    val type = c.getInt(1)
+                    number to type
+                } else null
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     override fun onDestroy() {

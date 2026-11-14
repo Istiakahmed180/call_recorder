@@ -21,18 +21,17 @@ class CallReceiver : BroadcastReceiver() {
         if (intent.action != "android.intent.action.PHONE_STATE") return
         val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
 
-        val svc = Intent(context, CallRecorderService::class.java)
-        when (state) {
-            TelephonyManager.EXTRA_STATE_OFFHOOK -> {
-                svc.action = CallRecorderService.ACTION_START
-                svc.putExtra(CallRecorderService.EXTRA_SOURCE, "Call")
-            }
-            TelephonyManager.EXTRA_STATE_IDLE -> {
-                svc.action = CallRecorderService.ACTION_STOP
-            }
-            else -> return // RINGING: wait for OFFHOOK
-        }
+        // Only forward OFFHOOK as a fallback to start recording if the running
+        // service's own listener somehow missed it. Stopping (and tagging the
+        // file with number/direction) is handled solely by the service's
+        // telephony callback on IDLE, so forwarding STOP here is avoided to
+        // prevent a race that would skip the call-log lookup.
+        if (state != TelephonyManager.EXTRA_STATE_OFFHOOK) return
 
+        val svc = Intent(context, CallRecorderService::class.java).apply {
+            action = CallRecorderService.ACTION_START
+            putExtra(CallRecorderService.EXTRA_SOURCE, "Call")
+        }
         // Only reaches the service if it is already running; never starts a new
         // foreground service from the background.
         try {
