@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity() {
             mutableListOf(),
             onPlay = { playRecording(it) },
             onShare = { shareRecording(it) },
-            onDelete = { it.file.delete() }
+            onDelete = { confirmDelete(it) }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
@@ -179,6 +180,18 @@ class MainActivity : AppCompatActivity() {
             prepare()
             start()
         }
+    }
+
+    private fun confirmDelete(rec: Recording) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.delete_title)
+            .setMessage(getString(R.string.delete_message, rec.displayName))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ ->
+                rec.file.delete()
+                refreshList()
+            }
+            .show()
     }
 
     private fun shareRecording(rec: Recording) {

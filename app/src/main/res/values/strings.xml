@@ -28,6 +28,9 @@
     <string name="play">Play</string>
     <string name="share_recording">Share recording</string>
     <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_title">Delete recording?</string>
+    <string name="delete_message">\"%1$s\" will be permanently deleted. This cannot be undone.</string>
     <string name="notification_channel_name">Call Recording</string>
     <string name="notification_recording_title">Recording call</string>
     <string name="notification_recording_text">This call is being recorded.</string>

@@ -40,9 +40,9 @@ class RecordingsAdapter(
         holder.btnDelete.setOnClickListener {
             val pos = holder.adapterPosition
             if (pos != RecyclerView.NO_POSITION) {
+                // Confirmation + actual deletion are handled by the host; the
+                // list is refreshed only after the user confirms.
                 onDelete(items[pos])
-                items.removeAt(pos)
-                notifyItemRemoved(pos)
             }
         }
     }
