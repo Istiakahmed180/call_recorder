@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         add(android.Manifest.permission.RECORD_AUDIO)
         add(android.Manifest.permission.READ_PHONE_STATE)
         add(android.Manifest.permission.READ_CALL_LOG)
+        add(android.Manifest.permission.READ_CONTACTS)
         add(android.Manifest.permission.MODIFY_AUDIO_SETTINGS)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             add(android.Manifest.permission.PROCESS_OUTGOING_CALLS)

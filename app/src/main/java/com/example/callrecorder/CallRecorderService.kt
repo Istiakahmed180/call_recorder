@@ -9,9 +9,11 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.provider.CallLog
+import android.provider.ContactsContract
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
@@ -306,8 +308,14 @@ class CallRecorderService : Service() {
             else -> "Call"
         }
         val num = number.replace(Regex("[^0-9+]"), "").ifBlank { "Unknown" }
+        // Prefer the contact name if the number is in the address book.
+        val contact = lookupContactName(number)
+        val label = contact?.takeIf { it.isNotBlank() }
+            ?.replace(Regex("[/\\\\:*?\"<>|_]"), " ")
+            ?.trim()
+            ?: num
         val stampPart = file.nameWithoutExtension.removePrefix("${SOURCE_CALL}_")
-        val newFile = File(file.parentFile, "${dirLabel}_${num}_${stampPart}.m4a")
+        val newFile = File(file.parentFile, "${dirLabel}_${label}_${stampPart}.m4a")
         try {
             if (newFile != file) file.renameTo(newFile)
         } catch (_: Exception) { }
@@ -341,6 +349,27 @@ class CallRecorderService : Service() {
             d
         } catch (_: Exception) {
             0L
+        }
+    }
+
+    private fun lookupContactName(number: String): String? {
+        if (number.isBlank()) return null
+        if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED
+        ) return null
+        return try {
+            val uri = Uri.withAppendedPath(
+                ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number)
+            )
+            contentResolver.query(
+                uri,
+                arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME),
+                null, null, null
+            )?.use { c ->
+                if (c.moveToFirst()) c.getString(0) else null
+            }
+        } catch (_: Exception) {
+            null
         }
     }
 
