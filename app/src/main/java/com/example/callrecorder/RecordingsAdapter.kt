@@ -15,7 +15,8 @@ class RecordingsAdapter(
     private val items: MutableList<Recording>,
     private val onPlayToggle: (Recording) -> Unit,
     private val onShare: (Recording) -> Unit,
-    private val onDelete: (Recording) -> Unit
+    private val onDelete: (Recording) -> Unit,
+    private val onRename: (Recording) -> Unit
 ) : RecyclerView.Adapter<RecordingsAdapter.VH>() {
 
     private val dateFmt = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.US)
@@ -51,6 +52,11 @@ class RecordingsAdapter(
         holder.btnPlay.contentDescription =
             holder.itemView.context.getString(if (isPlaying) R.string.stop else R.string.play)
 
+        holder.itemView.setOnLongClickListener {
+            val pos = holder.adapterPosition
+            if (pos != RecyclerView.NO_POSITION) onRename(items[pos])
+            true
+        }
         holder.btnPlay.setOnClickListener { onPlayToggle(rec) }
         holder.btnShare.setOnClickListener { onShare(rec) }
         holder.btnDelete.setOnClickListener {

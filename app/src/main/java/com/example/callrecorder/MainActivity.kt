@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,7 +63,8 @@ class MainActivity : AppCompatActivity() {
             mutableListOf(),
             onPlayToggle = { togglePlay(it) },
             onShare = { shareRecording(it) },
-            onDelete = { confirmDelete(it) }
+            onDelete = { confirmDelete(it) },
+            onRename = { showRenameDialog(it) }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
@@ -269,6 +272,35 @@ class MainActivity : AppCompatActivity() {
         player = null
         playingFile = null
         adapter.setPlaying(null)
+    }
+
+    private fun showRenameDialog(rec: Recording) {
+        val input = EditText(this).apply {
+            setText(rec.file.nameWithoutExtension)
+            setSelection(text.length)
+            setSingleLine()
+        }
+        val pad = (20 * resources.displayMetrics.density).toInt()
+        val container = FrameLayout(this).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.rename_title)
+            .setView(container)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.rename) { _, _ ->
+                val raw = input.text.toString().trim()
+                if (raw.isEmpty()) return@setPositiveButton
+                val safe = raw.replace(Regex("[/\\\\:*?\"<>|]"), "_")
+                val ext = rec.file.extension.ifEmpty { "m4a" }
+                val newFile = File(rec.file.parentFile, "$safe.$ext")
+                if (newFile.name != rec.file.name && !newFile.exists()) {
+                    rec.file.renameTo(newFile)
+                    refreshList()
+                }
+            }
+            .show()
     }
 
     private fun confirmDelete(rec: Recording) {
