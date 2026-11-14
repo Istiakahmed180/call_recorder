@@ -6,5 +6,6 @@ data class Recording(
     val file: File,
     val displayName: String,
     val dateMillis: Long,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    val durationMs: Long = 0L
 )

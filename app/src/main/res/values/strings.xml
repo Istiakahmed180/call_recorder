@@ -26,6 +26,7 @@
     <string name="no_recordings">No recordings yet</string>
     <string name="no_recordings_hint">Recordings will appear here after a call</string>
     <string name="play">Play</string>
+    <string name="stop">Stop</string>
     <string name="share_recording">Share recording</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>

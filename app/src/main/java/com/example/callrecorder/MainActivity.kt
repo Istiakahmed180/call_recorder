@@ -2,6 +2,7 @@ package com.example.callrecorder
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
@@ -25,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: RecordingsAdapter
     private var player: MediaPlayer? = null
+    private var playingFile: File? = null
 
     private val requiredPermissions = buildList {
         add(android.Manifest.permission.RECORD_AUDIO)
@@ -54,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
         adapter = RecordingsAdapter(
             mutableListOf(),
-            onPlay = { playRecording(it) },
+            onPlayToggle = { togglePlay(it) },
             onShare = { shareRecording(it) },
             onDelete = { confirmDelete(it) }
         )
@@ -163,7 +165,8 @@ class MainActivity : AppCompatActivity() {
                 file = it,
                 displayName = it.name,
                 dateMillis = it.lastModified(),
-                sizeBytes = it.length()
+                sizeBytes = it.length(),
+                durationMs = readDuration(it)
             )
         }
         adapter.updateData(recordings)
@@ -173,13 +176,47 @@ class MainActivity : AppCompatActivity() {
         binding.textRecordCount.text = if (empty) "" else recordings.size.toString()
     }
 
-    private fun playRecording(rec: Recording) {
-        player?.release()
-        player = MediaPlayer().apply {
-            setDataSource(rec.file.absolutePath)
-            prepare()
-            start()
+    private fun readDuration(f: File): Long {
+        return try {
+            val mmr = MediaMetadataRetriever()
+            mmr.setDataSource(f.absolutePath)
+            val d = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull() ?: 0L
+            mmr.release()
+            d
+        } catch (_: Exception) {
+            0L
         }
+    }
+
+    private fun togglePlay(rec: Recording) {
+        if (playingFile == rec.file) {
+            stopPlayback()
+            return
+        }
+        stopPlayback()
+        try {
+            player = MediaPlayer().apply {
+                setDataSource(rec.file.absolutePath)
+                setOnCompletionListener { stopPlayback() }
+                prepare()
+                start()
+            }
+            playingFile = rec.file
+            adapter.setPlaying(rec.file)
+        } catch (_: Exception) {
+            stopPlayback()
+        }
+    }
+
+    private fun stopPlayback() {
+        try {
+            player?.stop()
+        } catch (_: Exception) { }
+        player?.release()
+        player = null
+        playingFile = null
+        adapter.setPlaying(null)
     }
 
     private fun confirmDelete(rec: Recording) {
@@ -206,8 +243,13 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(intent, getString(R.string.share_recording)))
     }
 
+    override fun onPause() {
+        super.onPause()
+        stopPlayback()
+    }
+
     override fun onDestroy() {
-        player?.release()
+        stopPlayback()
         super.onDestroy()
     }
 }
