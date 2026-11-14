@@ -7,12 +7,15 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -33,6 +36,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: RecordingsAdapter
     private var player: MediaPlayer? = null
     private var playingFile: File? = null
+    private val playHandler = Handler(Looper.getMainLooper())
+    private val progressRunnable = object : Runnable {
+        override fun run() {
+            val p = player ?: return
+            try {
+                binding.seekBar.progress = p.currentPosition
+                binding.miniTime.text = "${fmtTime(p.currentPosition)} / ${fmtTime(p.duration)}"
+            } catch (_: Exception) { }
+            playHandler.postDelayed(this, 500)
+        }
+    }
     private var allRecordings: List<Recording> = emptyList()
     private var searchQuery: String = ""
 
@@ -66,11 +80,10 @@ class MainActivity : AppCompatActivity() {
         // Edge-to-edge (targetSdk 35): pad the header below the status bar and
         // the list above the navigation bar.
         val headerTop = binding.headerBar.paddingTop
-        val listBottom = binding.recyclerView.paddingBottom
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             binding.headerBar.updatePadding(top = headerTop + bars.top)
-            binding.recyclerView.updatePadding(bottom = listBottom + bars.bottom)
+            v.updatePadding(bottom = bars.bottom)
             insets
         }
 
@@ -88,6 +101,16 @@ class MainActivity : AppCompatActivity() {
             searchQuery = it?.toString()?.trim().orEmpty()
             applyFilter()
         }
+
+        binding.btnMiniPlay.setOnClickListener { togglePause() }
+        binding.btnMiniClose.setOnClickListener { stopPlayback() }
+        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
+                if (fromUser) player?.seekTo(progress)
+            }
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {}
+        })
 
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -281,20 +304,41 @@ class MainActivity : AppCompatActivity() {
         }
         stopPlayback()
         try {
-            player = MediaPlayer().apply {
+            val mp = MediaPlayer().apply {
                 setDataSource(rec.file.absolutePath)
                 setOnCompletionListener { stopPlayback() }
                 prepare()
                 start()
             }
+            player = mp
             playingFile = rec.file
             adapter.setPlaying(rec.file)
+            binding.miniTitle.text = rec.displayName
+            binding.seekBar.max = mp.duration
+            binding.seekBar.progress = 0
+            binding.btnMiniPlay.setImageResource(R.drawable.ic_pause)
+            binding.miniPlayer.visibility = View.VISIBLE
+            playHandler.post(progressRunnable)
         } catch (_: Exception) {
             stopPlayback()
         }
     }
 
+    private fun togglePause() {
+        val p = player ?: return
+        if (p.isPlaying) {
+            p.pause()
+            binding.btnMiniPlay.setImageResource(R.drawable.ic_play)
+            playHandler.removeCallbacks(progressRunnable)
+        } else {
+            p.start()
+            binding.btnMiniPlay.setImageResource(R.drawable.ic_pause)
+            playHandler.post(progressRunnable)
+        }
+    }
+
     private fun stopPlayback() {
+        playHandler.removeCallbacks(progressRunnable)
         try {
             player?.stop()
         } catch (_: Exception) { }
@@ -302,6 +346,12 @@ class MainActivity : AppCompatActivity() {
         player = null
         playingFile = null
         adapter.setPlaying(null)
+        binding.miniPlayer.visibility = View.GONE
+    }
+
+    private fun fmtTime(ms: Int): String {
+        val totalSec = ms / 1000
+        return "%d:%02d".format(totalSec / 60, totalSec % 60)
     }
 
     private fun showRenameDialog(rec: Recording) {

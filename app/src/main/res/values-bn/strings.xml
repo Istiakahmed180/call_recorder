@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">কল রেকর্ডার</string>
+    <string name="app_tagline">স্বয়ংক্রিয় কল রেকর্ডার</string>
+
+    <string name="setup_header">সেটআপ</string>
+    <string name="setup_permissions_title">রেকর্ডিং অনুমতি</string>
+    <string name="setup_accessibility_title">WhatsApp / IMO শনাক্তকরণ</string>
+    <string name="setup_battery_title">ব্যাটারি অপটিমাইজেশন</string>
+    <string name="setup_tap_to_set_up">সেট আপ করতে ট্যাপ করুন</string>
+    <string name="setup_granted">অনুমোদিত</string>
+    <string name="setup_enabled">চালু আছে</string>
+    <string name="setup_disabled_ok">বন্ধ (প্রস্তাবিত)</string>
+    <string name="setup_not_granted">অনুমতি নেই — অনুমতি দিতে ট্যাপ করুন</string>
+    <string name="setup_not_enabled">বন্ধ — চালু করতে ট্যাপ করুন</string>
+    <string name="setup_battery_on">চালু — বন্ধ করতে ট্যাপ করুন</string>
+
+    <string name="status_checking">সেটআপ পরীক্ষা করা হচ্ছে…</string>
+    <string name="status_active">সক্রিয় — কলের জন্য অপেক্ষারত</string>
+    <string name="status_needs_setup">রেকর্ডিং শুরু করতে অনুমতি দিন</string>
+
+    <string name="btn_grant_permissions">রেকর্ডিং অনুমতি দিন</string>
+    <string name="btn_enable_accessibility">WhatsApp/IMO শনাক্তকরণ চালু করুন (অ্যাক্সেসিবিলিটি)</string>
+    <string name="btn_ignore_battery">এই অ্যাপের ব্যাটারি অপটিমাইজেশন বন্ধ করুন</string>
+    <string name="recordings_header">রেকর্ডিং</string>
+    <string name="no_recordings">এখনও কোনো রেকর্ডিং নেই</string>
+    <string name="no_recordings_hint">কলের পরে রেকর্ডিং এখানে দেখা যাবে</string>
+    <string name="search_hint">রেকর্ডিং খুঁজুন</string>
+    <string name="search_no_results">আপনার খোঁজের সাথে মিলছে এমন রেকর্ডিং নেই</string>
+
+    <string name="settings_title">সেটিংস</string>
+    <string name="back">পেছনে</string>
+    <string name="pref_audio_source_title">কল অডিও সোর্স ব্যবহার করুন</string>
+    <string name="pref_audio_source_summary">প্রস্তাবিত। রেকর্ডিং নীরব হলে সাধারণ মাইক্রোফোন ব্যবহার করতে বন্ধ করুন।</string>
+    <string name="pref_discard_short_title">খুব ছোট রেকর্ডিং বাদ দিন</string>
+    <string name="pref_discard_short_summary">২ সেকেন্ডের কম রেকর্ডিং মুছে ফেলুন (যেমন ধরা না হওয়া কল)।</string>
+    <string name="pref_auto_delete_title">পুরোনো রেকর্ডিং স্বয়ংক্রিয়ভাবে মুছুন</string>
+    <string name="auto_delete_never">কখনও না</string>
+    <string name="auto_delete_days">%d দিন পর</string>
+
+    <string name="play">চালান</string>
+    <string name="stop">থামান</string>
+    <string name="share_recording">রেকর্ডিং শেয়ার করুন</string>
+    <string name="delete">মুছুন</string>
+    <string name="cancel">বাতিল</string>
+    <string name="rename">নাম পরিবর্তন</string>
+    <string name="rename_title">রেকর্ডিং-এর নাম পরিবর্তন</string>
+    <string name="delete_title">রেকর্ডিং মুছবেন?</string>
+    <string name="delete_message">\"%1$s\" স্থায়ীভাবে মুছে যাবে। এটি ফেরানো যাবে না।</string>
+
+    <string name="notification_channel_name">কল রেকর্ডিং</string>
+    <string name="notification_recording_title">কল রেকর্ড হচ্ছে</string>
+    <string name="notification_recording_text">এই কলটি রেকর্ড করা হচ্ছে।</string>
+    <string name="notification_listening_title">কল রেকর্ডার সক্রিয়</string>
+    <string name="notification_listening_text">রেকর্ড করার জন্য কলের অপেক্ষায়।</string>
+    <string name="warn_silent_title">রেকর্ডিং-এ শব্দ নাও থাকতে পারে</string>
+    <string name="warn_silent_text">শেষ কলে প্রায় কোনো শব্দ রেকর্ড হয়নি — আপনার ফোন কল অডিও ব্লক করতে পারে। সেটিংসে গিয়ে \"কল অডিও সোর্স ব্যবহার করুন\" বন্ধ করতে ট্যাপ করুন।</string>
+    <string name="accessibility_service_description">শুধু WhatsApp বা IMO কল স্ক্রিন খোলা আছে কিনা শনাক্ত করতে ব্যবহৃত, যাতে রেকর্ডিং স্বয়ংক্রিয়ভাবে শুরু হতে পারে। কোনো মেসেজ বা অন্য কিছু পড়ে না।</string>
+</resources>

@@ -51,7 +51,9 @@ class CallRecorderService : Service() {
         const val EXTRA_SOURCE = "source" // "Call" or app name like "WhatsApp"
         private const val CHANNEL_ID = "call_recorder_channel"
         private const val NOTIF_ID = 42
+        private const val WARN_NOTIF_ID = 43
         private const val SOURCE_CALL = "Call"
+        private const val SILENCE_THRESHOLD = 1200
     }
 
     private var recorder: MediaRecorder? = null
@@ -62,6 +64,19 @@ class CallRecorderService : Service() {
     private var isListening = false
     private var telephonyCallback: Any? = null
     private var phoneStateListener: PhoneStateListener? = null
+
+    private val amplitudeHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var maxAmplitude = 0
+    private var lastMaxAmplitude = 0
+    private val amplitudeSampler = object : Runnable {
+        override fun run() {
+            try {
+                val a = recorder?.maxAmplitude ?: 0
+                if (a > maxAmplitude) maxAmplitude = a
+            } catch (_: Exception) { }
+            amplitudeHandler.postDelayed(this, 700)
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -90,7 +105,7 @@ class CallRecorderService : Service() {
                 // Keep the service alive and listening; just drop back to the
                 // idle notification.
                 updateNotification(recording = false)
-                discardIfTooShort(saved)
+                if (!discardIfTooShort(saved)) warnIfSilent(saved)
             }
         }
         return START_STICKY
@@ -271,11 +286,17 @@ class CallRecorderService : Service() {
                 }
             }
         }
-        if (isRecording) updateNotification(recording = true)
+        if (isRecording) {
+            maxAmplitude = 0
+            amplitudeHandler.post(amplitudeSampler)
+            updateNotification(recording = true)
+        }
     }
 
     private fun stopRecording() {
         if (!isRecording) return
+        amplitudeHandler.removeCallbacks(amplitudeSampler)
+        lastMaxAmplitude = maxAmplitude
         try {
             recorder?.stop()
         } catch (_: Exception) {
@@ -298,6 +319,7 @@ class CallRecorderService : Service() {
     private fun finalizeCallRecording(file: File?) {
         if (file == null || !file.exists()) return
         if (discardIfTooShort(file)) return
+        warnIfSilent(file)
         val info = lookupLastCall() ?: return
         val (number, type) = info
 
@@ -337,6 +359,40 @@ class CallRecorderService : Service() {
             return true
         }
         return false
+    }
+
+    /**
+     * If a reasonably long recording captured essentially no sound, the ROM is
+     * probably blocking call audio — warn the user with an actionable hint.
+     */
+    private fun warnIfSilent(file: File?) {
+        if (file == null || !file.exists()) return
+        val dur = readDurationMs(file)
+        if (dur >= 4000 && lastMaxAmplitude < SILENCE_THRESHOLD) {
+            postSilenceWarning()
+        }
+    }
+
+    private fun postSilenceWarning() {
+        createChannel()
+        val tap = PendingIntent.getActivity(
+            this, 1,
+            Intent(this, SettingsActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val text = getString(R.string.warn_silent_text)
+        val n = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.warn_silent_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setAutoCancel(true)
+            .setContentIntent(tap)
+            .build()
+        try {
+            getSystemService(NotificationManager::class.java).notify(WARN_NOTIF_ID, n)
+        } catch (_: Exception) { }
     }
 
     private fun readDurationMs(file: File): Long {
@@ -396,6 +452,7 @@ class CallRecorderService : Service() {
     }
 
     override fun onDestroy() {
+        amplitudeHandler.removeCallbacks(amplitudeSampler)
         stopRecording()
         stopListening()
         super.onDestroy()

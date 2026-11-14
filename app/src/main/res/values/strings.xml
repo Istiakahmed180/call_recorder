@@ -51,5 +51,7 @@
     <string name="notification_recording_text">This call is being recorded.</string>
     <string name="notification_listening_title">Call recorder active</string>
     <string name="notification_listening_text">Listening for calls to record.</string>
+    <string name="warn_silent_title">Recording may have no audio</string>
+    <string name="warn_silent_text">The last call recorded almost no sound — your phone may be blocking call audio. Tap to open Settings and turn off \"Use call audio source\".</string>
     <string name="accessibility_service_description">Used only to detect when a WhatsApp or IMO call screen is on screen, so recording can start automatically. Does not read messages or any other content.</string>
 </resources>
