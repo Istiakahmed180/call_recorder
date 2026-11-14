@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.IBinder
@@ -82,10 +83,12 @@ class CallRecorderService : Service() {
                 startRecording(source)
             }
             ACTION_STOP -> {
+                val saved = outputFile
                 stopRecording()
                 // Keep the service alive and listening; just drop back to the
                 // idle notification.
                 updateNotification(recording = false)
+                discardIfTooShort(saved)
             }
         }
         return START_STICKY
@@ -229,8 +232,13 @@ class CallRecorderService : Service() {
         val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         outputFile = File(dir, "${source}_$stamp.m4a")
 
+        val primarySource = if (Prefs.useCallAudioSource(this))
+            MediaRecorder.AudioSource.VOICE_COMMUNICATION
+        else
+            MediaRecorder.AudioSource.MIC
+
         recorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+            setAudioSource(primarySource)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             setAudioEncodingBitRate(128000)
@@ -287,6 +295,7 @@ class CallRecorderService : Service() {
      */
     private fun finalizeCallRecording(file: File?) {
         if (file == null || !file.exists()) return
+        if (discardIfTooShort(file)) return
         val info = lookupLastCall() ?: return
         val (number, type) = info
 
@@ -302,6 +311,37 @@ class CallRecorderService : Service() {
         try {
             if (newFile != file) file.renameTo(newFile)
         } catch (_: Exception) { }
+    }
+
+    /**
+     * Deletes a recording that is too short to be useful (an unanswered or
+     * instantly-dropped call) when the user has that option enabled. Returns
+     * true if the file was deleted.
+     */
+    private fun discardIfTooShort(file: File?): Boolean {
+        if (file == null || !file.exists()) return false
+        if (!Prefs.discardShort(this)) return false
+        val dur = readDurationMs(file)
+        val tooShort = (dur in 1 until Prefs.SHORT_RECORDING_MS) ||
+            (dur == 0L && file.length() < 3000)
+        if (tooShort) {
+            file.delete()
+            return true
+        }
+        return false
+    }
+
+    private fun readDurationMs(file: File): Long {
+        return try {
+            val mmr = MediaMetadataRetriever()
+            mmr.setDataSource(file.absolutePath)
+            val d = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull() ?: 0L
+            mmr.release()
+            d
+        } catch (_: Exception) {
+            0L
+        }
     }
 
     private fun lookupLastCall(): Pair<String, Int>? {

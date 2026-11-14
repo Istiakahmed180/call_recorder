@@ -71,6 +71,10 @@ class MainActivity : AppCompatActivity() {
             applyFilter()
         }
 
+        binding.btnSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
         binding.btnGrantPermissions.setOnClickListener {
             permissionLauncher.launch(requiredPermissions.toTypedArray())
         }
@@ -89,9 +93,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        cleanupOldRecordings()
         refreshList()
         updateSetupStatus()
         maybeStartListening()
+    }
+
+    /** Deletes recordings older than the user's auto-delete setting (if set). */
+    private fun cleanupOldRecordings() {
+        val days = Prefs.autoDeleteDays(this)
+        if (days <= 0) return
+        val cutoff = System.currentTimeMillis() - days * 24L * 60 * 60 * 1000
+        val dir = File(getExternalFilesDir(null), "Recordings")
+        dir.listFiles()?.forEach { if (it.isFile && it.lastModified() < cutoff) it.delete() }
     }
 
     private fun hasPermission(p: String) =

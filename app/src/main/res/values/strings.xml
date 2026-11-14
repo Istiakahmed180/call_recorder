@@ -26,6 +26,16 @@
     <string name="no_recordings">No recordings yet</string>
     <string name="no_recordings_hint">Recordings will appear here after a call</string>
     <string name="search_hint">Search recordings</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="back">Back</string>
+    <string name="pref_audio_source_title">Use call audio source</string>
+    <string name="pref_audio_source_summary">Recommended. Turn off to use the plain microphone if recordings are silent.</string>
+    <string name="pref_discard_short_title">Discard very short recordings</string>
+    <string name="pref_discard_short_summary">Delete recordings under 2 seconds (e.g. unanswered calls).</string>
+    <string name="pref_auto_delete_title">Auto-delete old recordings</string>
+    <string name="auto_delete_never">Never</string>
+    <string name="auto_delete_days">After %d days</string>
     <string name="play">Play</string>
     <string name="stop">Stop</string>
     <string name="share_recording">Share recording</string>

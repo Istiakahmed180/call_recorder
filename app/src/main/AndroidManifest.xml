@@ -34,6 +34,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+
         <!-- Detects phone call state changes: rings, offhook, idle -->
         <receiver
             android:name=".CallReceiver"
